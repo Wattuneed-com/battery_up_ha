@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Link your Battery UP account",
+        "description": "Sign in with your Battery UP account (the same one as the app). Home Assistant exchanges the password for a revocable access token and never stores the password itself.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-link Battery UP",
+        "description": "The access token for {email} was revoked or has become invalid. Enter the account password to mint a new one.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Login refused — check the email and password.",
+      "cannot_connect": "Cannot reach the Battery UP service.",
+      "unknown": "Unexpected error — check the logs."
+    },
+    "abort": {
+      "already_configured": "This Battery UP account is already configured.",
+      "reauth_successful": "Re-linked successfully."
+    }
+  }
+}

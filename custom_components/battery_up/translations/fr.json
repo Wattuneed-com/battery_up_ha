@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lier votre compte Battery UP",
+        "description": "Connectez-vous avec votre compte Battery UP (le même que l'application). Home Assistant échange le mot de passe contre un jeton d'accès révocable et ne stocke jamais le mot de passe lui-même.",
+        "data": {
+          "email": "E-mail",
+          "password": "Mot de passe"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Relier Battery UP",
+        "description": "Le jeton d'accès pour {email} a été révoqué ou est devenu invalide. Entrez le mot de passe du compte pour en créer un nouveau.",
+        "data": {
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Connexion refusée — vérifiez l'e-mail et le mot de passe.",
+      "cannot_connect": "Impossible de joindre le service Battery UP.",
+      "unknown": "Erreur inattendue — consultez les journaux."
+    },
+    "abort": {
+      "already_configured": "Ce compte Battery UP est déjà configuré.",
+      "reauth_successful": "Nouvelle liaison réussie."
+    }
+  }
+}
