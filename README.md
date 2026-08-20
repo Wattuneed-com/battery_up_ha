@@ -11,8 +11,10 @@ gated on a command-acknowledgement path server-side.
 
 ## Installation (HACS custom repository)
 
-1. HACS → Integrations → ⋮ → *Custom repositories* → add this repository
-   URL, category *Integration*.
+1. HACS → Integrations → ⋮ → *Custom repositories* → add
+   `https://github.com/wattuneed/battery_up_ha`, category *Integration*.
+   (Once the integration is accepted into the HACS default catalog, this
+   step disappears — search "Battery UP" directly in HACS.)
 2. Install **Battery UP**, restart Home Assistant.
 3. Settings → Devices & services → *Add integration* → **Battery UP**.
 4. Sign in with your Battery UP account (the same as the app/site).
