@@ -11,8 +11,14 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_PASSWORD
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import (
@@ -21,7 +27,17 @@ from .api import (
     BatteryUpConnectionError,
     BatteryUpError,
 )
-from .const import CONF_API_TOKEN, CONF_EMAIL, DOMAIN, LOGGER
+from .const import (
+    CONF_API_TOKEN,
+    CONF_EMAIL,
+    DOMAIN,
+    LOGGER,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+    OPT_RELAY_CONTROL,
+    OPT_SCAN_INTERVAL,
+    UPDATE_INTERVAL_SECONDS,
+)
 
 USER_SCHEMA = vol.Schema(
     {
@@ -37,6 +53,11 @@ class BatteryUpConfigFlow(ConfigFlow, domain=DOMAIN):
     """Login -> mint a named integration token -> store only the token."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> "BatteryUpOptionsFlow":
+        return BatteryUpOptionsFlow()
 
     async def _mint_token(self, email: str, password: str) -> str:
         """The whole exchange. Raises the api.py taxonomy on failure."""
@@ -118,4 +139,37 @@ class BatteryUpConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=REAUTH_SCHEMA,
             description_placeholders={"email": email},
             errors=errors,
+        )
+
+
+class BatteryUpOptionsFlow(OptionsFlow):
+    """Post-setup settings: polling interval, and the relay-control opt-in
+    (phase 2 — the switches stay unavailable until the server-side command
+    feature is live and the box is in MANUAL mode)."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        options = self.config_entry.options
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        OPT_SCAN_INTERVAL,
+                        default=options.get(OPT_SCAN_INTERVAL, UPDATE_INTERVAL_SECONDS),
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                    ),
+                    vol.Required(
+                        OPT_RELAY_CONTROL,
+                        default=options.get(OPT_RELAY_CONTROL, False),
+                    ): bool,
+                }
+            ),
         )

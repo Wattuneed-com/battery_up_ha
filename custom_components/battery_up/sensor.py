@@ -71,6 +71,7 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
         value_fn=soc_value,
         # The raw claim stays inspectable even while the sensor says unknown.
         attributes_fn=lambda reading: {"raw_soc": reading.get("soc")},
@@ -81,6 +82,7 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
         value_fn=_power_value,
     ),
     BatteryUpSensorDescription(
@@ -89,6 +91,7 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_electrical("v"),
     ),
     BatteryUpSensorDescription(
@@ -97,6 +100,7 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
         value_fn=_electrical("itot"),
     ),
     BatteryUpSensorDescription(
@@ -105,13 +109,16 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
         value_fn=_electrical("avg_cell_t"),
     ),
     BatteryUpSensorDescription(
         key="soh",
         name="State of health",
+        icon="mdi:battery-heart-variant",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
         entity_registry_enabled_default=False,
         value_fn=soh_value,
     ),
@@ -145,8 +152,10 @@ SENSORS: tuple[BatteryUpSensorDescription, ...] = (
     BatteryUpSensorDescription(
         key="module_count",
         name="Battery modules",
+        icon="mdi:counter",
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
+        suggested_display_precision=0,
         value_fn=_raw_number("mod_cnt"),
     ),
 )

@@ -32,3 +32,10 @@ MIN_PLAUSIBLE_PACK_VOLTAGE = 10.0
 # |current| above which the pack is clearly active, used to spot the
 # "soc=0 while charging at 40 A" defect some devices exhibit.
 ACTIVE_CURRENT_AMPS = 2.0
+
+# Options (Configure button on the integration card).
+OPT_SCAN_INTERVAL = "scan_interval"
+OPT_RELAY_CONTROL = "relay_control"
+
+MIN_SCAN_INTERVAL = 15   # the boxes publish every 15 s; faster is waste
+MAX_SCAN_INTERVAL = 300

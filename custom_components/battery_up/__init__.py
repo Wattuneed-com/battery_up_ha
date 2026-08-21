@@ -15,7 +15,7 @@ from .api import BatteryUpClient
 from .const import CONF_API_TOKEN
 from .coordinator import BatteryUpCoordinator
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
 
 BatteryUpConfigEntry = ConfigEntry[BatteryUpCoordinator]
 
@@ -38,7 +38,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: BatteryUpConfigEntry) ->
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Options (interval, relay opt-in) apply via a clean reload.
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
     return True
+
+
+async def _async_options_updated(hass: HomeAssistant, entry: BatteryUpConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: BatteryUpConfigEntry) -> bool:

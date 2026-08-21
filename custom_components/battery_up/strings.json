@@ -26,5 +26,20 @@
       "already_configured": "This Battery UP account is already configured.",
       "reauth_successful": "Re-linked successfully."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Battery UP options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "relay_control": "Enable relay control (advanced)"
+        },
+        "data_description": {
+          "scan_interval": "The boxes publish every 15 seconds; values from 15 to 300.",
+          "relay_control": "Creates two switch entities per box. They stay unavailable until the cloud command feature is active and the box is in MANUAL mode — commands are requests confirmed by the device, never assumptions."
+        }
+      }
+    }
   }
 }

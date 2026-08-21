@@ -87,10 +87,23 @@ class BatteryUpEntity(CoordinatorEntity[BatteryUpCoordinator]):
 
     @property
     def _payload(self) -> dict[str, Any] | None:
-        """The API's state answer for this box, or None."""
+        """The API's /state answer for this box, or None."""
         if self.coordinator.data is None:
             return None
-        return self.coordinator.data.get(self._mac)
+        entry = self.coordinator.data.get(self._mac)
+        if entry is None:
+            return None
+        return entry.get("state")
+
+    @property
+    def _relays(self) -> dict[str, Any] | None:
+        """The API's /relays answer, or None (not opted in, or feature dark)."""
+        if self.coordinator.data is None:
+            return None
+        entry = self.coordinator.data.get(self._mac)
+        if entry is None:
+            return None
+        return entry.get("relays")
 
     @property
     def _reading(self) -> dict[str, Any] | None:

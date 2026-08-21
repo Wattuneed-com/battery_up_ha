@@ -26,5 +26,20 @@
       "already_configured": "Ce compte Battery UP est déjà configuré.",
       "reauth_successful": "Nouvelle liaison réussie."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Battery UP",
+        "data": {
+          "scan_interval": "Intervalle d'interrogation (secondes)",
+          "relay_control": "Activer le contrôle des relais (avancé)"
+        },
+        "data_description": {
+          "scan_interval": "Les boîtiers publient toutes les 15 secondes ; valeurs de 15 à 300.",
+          "relay_control": "Crée deux interrupteurs par boîtier. Ils restent indisponibles tant que la fonction cloud n'est pas active et que le boîtier n'est pas en mode MANUEL — une commande est une demande confirmée par l'appareil, jamais une supposition."
+        }
+      }
+    }
   }
 }

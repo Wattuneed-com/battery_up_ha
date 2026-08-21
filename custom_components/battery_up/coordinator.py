@@ -17,15 +17,24 @@ from .api import (
     BatteryUpError,
     BatteryUpForbiddenError,
 )
-from .const import DOMAIN, LOGGER, UPDATE_INTERVAL_SECONDS
+from .const import (
+    DOMAIN,
+    LOGGER,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+    OPT_RELAY_CONTROL,
+    OPT_SCAN_INTERVAL,
+    UPDATE_INTERVAL_SECONDS,
+)
 
 
 class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Polls /state for each battery device on the account.
+    """Polls each battery device on the account.
 
-    coordinator.data maps mac -> the API's state payload
-    ({"reading": ..., "age_seconds": ...}) or None when the device has no
-    data or was removed from the account.
+    coordinator.data maps mac -> {"state": <state payload or None>,
+    "relays": <relay payload or None>}. The relay half is only fetched when
+    the user opted into relay control (Configure), and is None while the
+    server-side command feature is disabled.
     """
 
     config_entry: ConfigEntry
@@ -33,14 +42,18 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def __init__(
         self, hass: HomeAssistant, entry: ConfigEntry, client: BatteryUpClient
     ) -> None:
+        interval = entry.options.get(OPT_SCAN_INTERVAL, UPDATE_INTERVAL_SECONDS)
+        interval = max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, int(interval)))
+
         super().__init__(
             hass,
             LOGGER,
             config_entry=entry,
             name=DOMAIN,
-            update_interval=timedelta(seconds=UPDATE_INTERVAL_SECONDS),
+            update_interval=timedelta(seconds=interval),
         )
         self.client = client
+        self.relay_control = bool(entry.options.get(OPT_RELAY_CONTROL, False))
         # mac -> device dict from /api/ha/devices, batteries only.
         self.devices: dict[str, dict[str, Any]] = {}
         self._forbidden_logged: set[str] = set()
@@ -81,8 +94,13 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data: dict[str, Any] = {}
 
         for mac in self.devices:
+            entry: dict[str, Any] = {"state": None, "relays": None}
+
             try:
-                data[mac] = await self.client.async_get_state(mac)
+                entry["state"] = await self.client.async_get_state(mac)
+
+                if self.relay_control:
+                    entry["relays"] = await self.client.async_get_relays(mac)
             except BatteryUpAuthError as err:
                 # Token revoked or account gone: every device is affected,
                 # stop and ask the user to re-link.
@@ -96,8 +114,9 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         "Battery UP refuses access to %s — it is no longer on this account",
                         mac,
                     )
-                data[mac] = None
             except (BatteryUpConnectionError, BatteryUpError) as err:
                 raise UpdateFailed(str(err)) from err
+
+            data[mac] = entry
 
         return data

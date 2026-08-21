@@ -140,6 +140,60 @@ class BatteryUpClient:
 
         raise BatteryUpError("device list failed (status %s)" % status)
 
+    async def async_get_relays(self, mac: str) -> dict[str, Any] | None:
+        """Relay command state for one device (mode, desired/applied, deaf).
+
+        409 means the server-side command feature is not enabled yet — mapped
+        to None so callers treat it like "no relay information".
+        """
+        status, data = await self._request("GET", "/api/ha/devices/%s/relays" % mac)
+
+        if status == 200 and isinstance(data, dict):
+            return data
+
+        if status in (404, 409):
+            return None
+
+        if status == 401:
+            raise BatteryUpAuthError("token refused")
+
+        if status == 403:
+            raise BatteryUpForbiddenError("not entitled to %s" % mac)
+
+        raise BatteryUpError("relay state read failed (status %s)" % status)
+
+    async def async_set_relays(
+        self, mac: str, relay1: int | None = None, relay2: int | None = None
+    ) -> dict[str, Any]:
+        """Request a relay state. A 202 is a REQUEST accepted, never a fact —
+        the device's echo is what later turns it into 'confirmed'."""
+        body: dict[str, Any] = {}
+        if relay1 is not None:
+            body["relay1"] = relay1
+        if relay2 is not None:
+            body["relay2"] = relay2
+
+        status, data = await self._request(
+            "POST", "/api/ha/devices/%s/relays" % mac, json_body=body
+        )
+
+        if status in (200, 202) and isinstance(data, dict):
+            return data
+
+        if status == 401:
+            raise BatteryUpAuthError("token refused")
+
+        if status == 403:
+            raise BatteryUpForbiddenError("not entitled to %s" % mac)
+
+        if status == 409:
+            raise BatteryUpError(
+                "relay commands unavailable (%s)"
+                % ((data or {}).get("error") if isinstance(data, dict) else status)
+            )
+
+        raise BatteryUpError("relay command failed (status %s)" % status)
+
     async def async_get_state(self, mac: str) -> dict[str, Any] | None:
         """Latest reading for one device, or None when it has no data.
 
