@@ -12,7 +12,7 @@ gated on a command-acknowledgement path server-side.
 ## Installation (HACS custom repository)
 
 1. HACS → Integrations → ⋮ → *Custom repositories* → add
-   `https://github.com/wattuneed/battery_up_ha`, category *Integration*.
+   `https://github.com/Wattuneed-com/battery_up_ha`, category *Integration*.
    (Once the integration is accepted into the HACS default catalog, this
    step disappears — search "Battery UP" directly in HACS.)
 2. Install **Battery UP**, restart Home Assistant.
@@ -42,6 +42,13 @@ Enabled by default:
 Disabled by default (enable per entity if wanted): State of health, BMS
 charge/discharge limits, module count, and the 14 individual
 protection/alarm flags (diagnostic category).
+
+## Options
+
+*Settings → Devices & services → Battery UP → Configure*: polling interval
+(15–300 s, default 30) and the relay-control opt-in (advanced — the switches
+stay unavailable until the cloud command feature is live and the box is in
+MANUAL mode).
 
 ## Data honesty — read this before automating
 
