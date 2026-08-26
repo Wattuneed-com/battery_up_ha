@@ -25,6 +25,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # brands cannot pass before home-assistant/brands merges our PR
-          # (chicken-and-egg). REMOVE this line once that PR is merged.
-          ignore: brands
