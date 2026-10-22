@@ -20,7 +20,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MIN_PLAUSIBLE_PACK_VOLTAGE, STALE_AFTER_SECONDS
+from .const import DOMAIN, ENERGY_STALE_AFTER_SECONDS, MIN_PLAUSIBLE_PACK_VOLTAGE, STALE_AFTER_SECONDS
 from .coordinator import BatteryUpCoordinator
 
 
@@ -184,7 +184,8 @@ class BatteryUpInverterEntity(CoordinatorEntity[BatteryUpCoordinator]):
         if payload is None:
             return False
         age = payload.get(age_key)
-        return isinstance(age, (int, float)) and age <= STALE_AFTER_SECONDS
+        limit = ENERGY_STALE_AFTER_SECONDS if age_key == "energy_age_seconds" else STALE_AFTER_SECONDS
+        return isinstance(age, (int, float)) and age <= limit
 
     @property
     def available(self) -> bool:

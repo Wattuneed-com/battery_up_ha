@@ -24,6 +24,10 @@ UPDATE_INTERVAL_SECONDS = 30
 # that pauses — entities go unavailable instead of lying.
 STALE_AFTER_SECONDS = 120
 
+# Energy counters: a Deye sends them every 15 s with its frames, a Sofar's are
+# read every 5 minutes (0.3.1) — older than this, they are not current.
+ENERGY_STALE_AFTER_SECONDS = 900
+
 # A 48 V pack that reports less than this is not a measurement, it is a
 # padding frame. Live boxes interleave frames where v/itot/temperature are
 # all exactly 0 with real ones (verified on the fleet 2026-08-19).
