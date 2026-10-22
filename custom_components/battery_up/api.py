@@ -194,6 +194,25 @@ class BatteryUpClient:
 
         raise BatteryUpError("relay command failed (status %s)" % status)
 
+    async def async_get_inverter(self, mac: str) -> dict[str, Any] | None:
+        """The inverter one box reads (Deye, Sofar): live values and energy
+        counters, or None when the box has never read an inverter (404)."""
+        status, data = await self._request("GET", "/api/ha/devices/%s/inverter" % mac)
+
+        if status == 200 and isinstance(data, dict):
+            return data
+
+        if status == 404:
+            return None
+
+        if status == 401:
+            raise BatteryUpAuthError("token refused")
+
+        if status == 403:
+            raise BatteryUpForbiddenError("not entitled to %s" % mac)
+
+        raise BatteryUpError("inverter read failed (status %s)" % status)
+
     async def async_get_state(self, mac: str) -> dict[str, Any] | None:
         """Latest reading for one device, or None when it has no data.
 

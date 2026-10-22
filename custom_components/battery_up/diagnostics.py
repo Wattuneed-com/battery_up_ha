@@ -21,6 +21,7 @@ async def async_get_config_entry_diagnostics(
     return {
         "entry": async_redact_data(dict(entry.data), TO_REDACT),
         "devices": coordinator.devices,
+        "inverters": coordinator.inverters,
         "data": coordinator.data,
         "last_update_success": coordinator.last_update_success,
     }

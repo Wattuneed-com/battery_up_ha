@@ -127,3 +127,65 @@ class BatteryUpEntity(CoordinatorEntity[BatteryUpCoordinator]):
         automation acting on a 30-minute-old SOC is worse than one that
         pauses."""
         return super().available and self._reading is not None and self._fresh
+
+
+FAMILY_MODELS: dict[str, str] = {
+    "three_phase": "Hybrid inverter, three-phase",
+    "single_phase": "Hybrid inverter, single-phase",
+    "sofar": "Hybrid inverter",
+}
+
+
+class BatteryUpInverterEntity(CoordinatorEntity[BatteryUpCoordinator]):
+    """Base for the inverter a box reads (Deye, Sofar), 0.3.0.
+
+    Same device as the box (one MAC, one device), named after the inverter's
+    brand. Available while the box's last inverter frame is fresh.
+    """
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: BatteryUpCoordinator,
+        mac: str,
+        description: EntityDescription,
+    ) -> None:
+        super().__init__(coordinator)
+        self._mac = mac
+        self.entity_description = description
+        self._attr_unique_id = "%s_inverter_%s" % (mac, description.key)
+
+        device = coordinator.devices.get(mac) or coordinator.inverters.get(mac) or {}
+        first = self._inverter or {}
+        brand = first.get("brand") or (device.get("inverter") or {}).get("brand")
+        family = first.get("family") or (device.get("inverter") or {}).get("family")
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, mac)},
+            name=device.get("name") or mac,
+            manufacturer={"deye": "Deye", "sofar": "Sofar"}.get(brand or "", "Battery UP"),
+            model=FAMILY_MODELS.get(family or ""),
+            serial_number=first.get("serial") or mac,
+        )
+
+    @property
+    def _inverter(self) -> dict[str, Any] | None:
+        """The API's /inverter answer for this box, or None."""
+        if self.coordinator.data is None:
+            return None
+        entry = self.coordinator.data.get(self._mac)
+        if entry is None:
+            return None
+        payload = entry.get("inverter")
+        return payload if isinstance(payload, dict) else None
+
+    def _fresh_for(self, age_key: str) -> bool:
+        payload = self._inverter
+        if payload is None:
+            return False
+        age = payload.get(age_key)
+        return isinstance(age, (int, float)) and age <= STALE_AFTER_SECONDS
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._fresh_for("age_seconds")

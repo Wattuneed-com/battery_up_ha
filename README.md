@@ -1,7 +1,7 @@
 # Battery UP for Home Assistant
 
 Cloud-polling integration for the **Wattuneed Battery UP** box: brings your
-battery's live data (SOC, power, voltage, current, temperature, BMS flags)
+battery's — and, since 0.3.0, your Deye or Sofar inverter's — live data (SOC, power, voltage, current, temperature, BMS flags)
 into Home Assistant, so any HA automation can react to it — the classic use
 case being a *solar router*: switch a water heater or a charger through any
 HA-controllable plug/contactor based on the battery's state.
@@ -42,6 +42,32 @@ Enabled by default:
 Disabled by default (enable per entity if wanted): State of health, BMS
 charge/discharge limits, module count, and the 14 individual
 protection/alarm flags (diagnostic category).
+
+## Inverters (0.3.0)
+
+When your Battery UP box reads a **Deye** or **Sofar** hybrid inverter (by
+cable or through the inverter's own Wi-Fi stick), the same device gets the
+inverter's values:
+
+| Entity | Notes |
+|---|---|
+| Battery state of charge / power / voltage / temperature | battery power **positive = discharging, negative = charging** |
+| Solar power | total, plus one per string (disabled by default) |
+| Grid power | **positive = importing, negative = exporting**; per phase disabled by default |
+| Grid voltage L1 (L2, L3 on three-phase), grid frequency | |
+| House consumption, backup output power | |
+| Grid connected | OFF during a power cut while the backup output runs |
+| Energy today / total | solar, house consumption, grid import, grid export, battery charge and discharge (kWh) |
+
+Only the values your inverter gives are created (a single-phase inverter
+has no L2/L3, a Deye has no lifetime battery counters — use the "today"
+ones).
+
+**Energy dashboard**: *Settings → Dashboards → Energy*: grid consumption =
+*Grid import total*, return to grid = *Grid export total*, solar
+production = *Solar energy total*, battery = *Battery charge today* /
+*Battery discharge today* (Sofar: the *total* ones). The "today" counters
+fall back to zero at midnight; Home Assistant counts that as a new cycle.
 
 ## Options
 

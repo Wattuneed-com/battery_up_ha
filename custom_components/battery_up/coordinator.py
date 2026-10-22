@@ -32,9 +32,11 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Polls each battery device on the account.
 
     coordinator.data maps mac -> {"state": <state payload or None>,
-    "relays": <relay payload or None>}. The relay half is only fetched when
-    the user opted into relay control (Configure), and is None while the
-    server-side command feature is disabled.
+    "relays": <relay payload or None>, "inverter": <inverter payload or None>}.
+    The relay half is only fetched when the user opted into relay control
+    (Configure), and is None while the server-side command feature is
+    disabled. The inverter half (0.3.0) is fetched for the boxes that read a
+    Deye or Sofar inverter.
     """
 
     config_entry: ConfigEntry
@@ -56,6 +58,8 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.relay_control = bool(entry.options.get(OPT_RELAY_CONTROL, False))
         # mac -> device dict from /api/ha/devices, batteries only.
         self.devices: dict[str, dict[str, Any]] = {}
+        # mac -> device dict, the boxes that read an inverter (Deye, Sofar).
+        self.inverters: dict[str, dict[str, Any]] = {}
         self._forbidden_logged: set[str] = set()
 
     async def _async_setup(self) -> None:
@@ -75,10 +79,13 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.devices = {
             d["mac"]: d for d in devices if self._is_battery(d)
         }
+        self.inverters = {
+            d["mac"]: d for d in devices if self._reads_inverter(d)
+        }
 
-        if not self.devices:
+        if not self.devices and not self.inverters:
             LOGGER.warning(
-                "No battery device on this Battery UP account (found %d other devices)",
+                "No battery or inverter on this Battery UP account (found %d other devices)",
                 len(devices),
             )
 
@@ -90,17 +97,28 @@ class BatteryUpCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         protocol = device.get("protocol") or {}
         return mac.startswith("BU-") and protocol.get("brand") == "PylonTech"
 
+    @staticmethod
+    def _reads_inverter(device: dict[str, Any]) -> bool:
+        """The API says so per device since 0.3.0's server side (22/10/2026);
+        an older server leaves the field out and nothing changes."""
+        mac = device.get("mac") or ""
+        return mac.startswith("BU-") and isinstance(device.get("inverter"), dict)
+
     async def _async_update_data(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
 
-        for mac in self.devices:
-            entry: dict[str, Any] = {"state": None, "relays": None}
+        for mac in {**self.devices, **self.inverters}:
+            entry: dict[str, Any] = {"state": None, "relays": None, "inverter": None}
 
             try:
-                entry["state"] = await self.client.async_get_state(mac)
+                if mac in self.devices:
+                    entry["state"] = await self.client.async_get_state(mac)
 
-                if self.relay_control:
-                    entry["relays"] = await self.client.async_get_relays(mac)
+                    if self.relay_control:
+                        entry["relays"] = await self.client.async_get_relays(mac)
+
+                if mac in self.inverters:
+                    entry["inverter"] = await self.client.async_get_inverter(mac)
             except BatteryUpAuthError as err:
                 # Token revoked or account gone: every device is affected,
                 # stop and ask the user to re-link.

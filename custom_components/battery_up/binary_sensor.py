@@ -22,7 +22,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import BatteryUpConfigEntry
-from .entity import BatteryUpEntity
+from .entity import BatteryUpEntity, BatteryUpInverterEntity
 
 # Every problem-shaped flag the reading carries.
 PROBLEM_FLAGS: tuple[str, ...] = (
@@ -145,11 +145,17 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
-    async_add_entities(
+    entities: list[BinarySensorEntity] = [
         BatteryUpBinarySensor(coordinator, mac, description)
         for mac in coordinator.devices
         for description in DESCRIPTIONS
-    )
+    ]
+    entities += [
+        BatteryUpGridConnected(coordinator, mac, GRID_CONNECTED)
+        for mac in coordinator.inverters
+        if ((((coordinator.data or {}).get(mac) or {}).get("inverter") or {}).get("reading") or {}).get("grid_connected") is not None
+    ]
+    async_add_entities(entities)
 
 
 class BatteryUpBinarySensor(BatteryUpEntity, BinarySensorEntity):
@@ -161,3 +167,21 @@ class BatteryUpBinarySensor(BatteryUpEntity, BinarySensorEntity):
         if reading is None:
             return None
         return self.entity_description.value_fn(reading)
+
+
+# The inverter sees the grid (0.3.0): off during a power cut, while the backup output runs.
+GRID_CONNECTED = BinarySensorEntityDescription(
+    key="grid_connected",
+    name="Grid connected",
+    device_class=BinarySensorDeviceClass.POWER,
+)
+
+
+class BatteryUpGridConnected(BatteryUpInverterEntity, BinarySensorEntity):
+    @property
+    def is_on(self) -> bool | None:
+        payload = self._inverter
+        if payload is None:
+            return None
+        value = (payload.get("reading") or {}).get("grid_connected")
+        return value if isinstance(value, bool) else None
